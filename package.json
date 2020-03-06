@@ -1,0 +1,28 @@
+{
+  "name": "chitchat",
+  "version": "0.1.0",
+  "description": "chit, but also chat",
+  "main": "server.js",
+  "scripts": {
+    "server": "nodemon server"
+  },
+  "keywords": [
+    "chat"
+  ],
+  "author": "todoroff",
+  "license": "MIT",
+  "devDependencies": {
+    "nodemon": "^2.0.2"
+  },
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "connect-mongo": "^3.2.0",
+    "dotenv": "^8.2.0",
+    "express": "^4.17.1",
+    "express-session": "^1.17.0",
+    "gravatar": "^1.8.0",
+    "mongoose": "^5.9.2",
+    "socket.io": "^2.3.0",
+    "validatorjs": "^3.18.1"
+  }
+}
