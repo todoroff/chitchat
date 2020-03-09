@@ -14,7 +14,7 @@ module.exports = function authRouter(io, socket, { action, payload }, cb) {
         return;
     }
   } catch (err) {
-    console.error(err.message);
+    console.error(err);
     cb({
       error: {
         type: "serverError",
@@ -78,13 +78,16 @@ async function signUp(io, socket, payload, cb) {
   user.password = await bcrypt.hash(password, salt);
 
   await user.save();
+
   const response = {
     user: {
       id: user.id
     }
   };
 
-  setLoggedInSession(true, socket.request.session, cb, response);
+  await setSession(socket.request.session, "isLoggedIn", true);
+
+  cb(response);
 }
 
 async function signIn(io, socket, payload, cb) {
@@ -141,25 +144,21 @@ async function signIn(io, socket, payload, cb) {
     }
   };
 
-  setLoggedInSession(true, socket.request.session, cb, response);
+  await setSession(socket.request.session, "isLoggedIn", true);
+
+  cb(response);
 }
 
-function setLoggedInSession(value, session, cb, response) {
-  //set logged in session
-  session.isLoggedIn = value;
+function setSession(session, key, value) {
+  session[key] = value;
   session.touch();
-  session.save(function(err) {
-    if (!err) {
-      if (cb) {
-        cb(response);
+  return new Promise((resolve, reject) => {
+    session.save(function(err) {
+      if (!err) {
+        resolve();
+      } else {
+        reject(err);
       }
-    } else {
-      cb({
-        error: {
-          type: "serverError",
-          list: { server: [err] }
-        }
-      });
-    }
+    });
   });
 }
