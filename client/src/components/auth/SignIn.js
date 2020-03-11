@@ -22,6 +22,8 @@ function SignIn(props) {
     setLoading(true);
     await props.signIn(formData);
     setLoading(false);
+
+    return setLoading(false);
   }
   return (
     <Fragment>
