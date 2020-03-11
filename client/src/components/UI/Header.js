@@ -20,7 +20,11 @@ function Header(props) {
       </div>
       <div className="header__section header__section--right">
         <div className="header__heading">
-          {(<FontAwesomeIcon icon={faHashtag} /> && props.heading) || null}
+          {props.heading ? (
+            <Fragment>
+              <FontAwesomeIcon icon={faHashtag} /> {props.heading}
+            </Fragment>
+          ) : null}
         </div>
         <div className="header__controls">
           <div className="header__control">
