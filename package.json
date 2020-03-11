@@ -4,7 +4,8 @@
   "description": "chit, but also chat",
   "main": "server.js",
   "scripts": {
-    "server": "nodemon server"
+    "server": "nodemon server",
+    "client": "npm start --prefix client"
   },
   "keywords": [
     "chat"
