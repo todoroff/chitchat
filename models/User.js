@@ -17,6 +17,11 @@ const UserSchema = new mongoose.Schema({
   avatar: {
     type: String
   },
+  status: {
+    type: String,
+    enum: ["Online", "Idle", "Offline"],
+    default: "Offline"
+  },
   date: {
     type: Date,
     default: Date.now
