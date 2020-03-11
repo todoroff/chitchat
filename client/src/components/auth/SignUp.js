@@ -73,9 +73,11 @@ function SignUp(props) {
                     id="password"
                     name="password"
                     placeholder="Your Password"
+                    minlength="6"
                     required
                     onChange={handleChange}
                     value={formData.password}
+                    
                   />
                 </div>
                 <div className="form__group">
@@ -88,6 +90,7 @@ function SignUp(props) {
                     id="password2"
                     name="password2"
                     placeholder="Your Password"
+                    minlength="6"
                     required
                     onChange={handleChange}
                     value={formData.password2}
