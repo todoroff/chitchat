@@ -1,16 +1,28 @@
 const bcrypt = require("bcryptjs");
 const gravatar = require("gravatar");
+const setSession = require("../utils/setSession");
 const Validator = require("validatorjs");
 const User = require("../models/User");
 
-module.exports = function authRouter(io, socket, { action, payload }, cb) {
+module.exports = async function authRouter(
+  io,
+  socket,
+  { method, payload },
+  cb
+) {
   try {
-    switch (action) {
+    switch (method) {
       case "signUp":
-        signUp(io, socket, payload, cb);
+        await signUp(io, socket, payload, cb);
         return;
       case "signIn":
-        signIn(io, socket, payload, cb);
+        await signIn(io, socket, payload, cb);
+        return;
+      case "signOut":
+        await signOut(io, socket, payload, cb);
+        return;
+      case "getLoggedInUser":
+        await getLoggedInUser(io, socket, payload, cb);
         return;
     }
   } catch (err) {
@@ -25,6 +37,16 @@ module.exports = function authRouter(io, socket, { action, payload }, cb) {
 };
 
 async function signUp(io, socket, payload, cb) {
+  if (socket.request.session.isLoggedIn) {
+    cb({
+      error: {
+        type: "authenticationError",
+        list: { authentication: ["You're already logged in."] }
+      }
+    });
+    return;
+  }
+
   const rules = {
     name: "required",
     email: "required|email",
@@ -78,28 +100,18 @@ async function signUp(io, socket, payload, cb) {
   user.password = await bcrypt.hash(password, salt);
 
   await user.save();
-
-  const response = {
-    user: {
-      id: user.id
-    }
-  };
-
-  await setSession(socket.request.session, "isLoggedIn", true);
-
-  cb(response);
+  cb();
 }
 
 async function signIn(io, socket, payload, cb) {
-  if (socket.request.session.isLoggedIn) {
+if (socket.request.session.isLoggedIn) {
     cb({
       error: {
-        type: "validationError",
+        type: "authenticationError",
         list: { authentication: ["You're already logged in."] }
       }
     });
   }
-
   const rules = {
     email: "required|email",
     password: "min:6"
@@ -138,22 +150,22 @@ async function signIn(io, socket, payload, cb) {
     return;
   }
 
-  const response = {
-    user: {
-      id: user.id
-    }
-  };
-
   await setSession(socket.request.session, "isLoggedIn", true);
+  await setSession(socket.request.session, "userId", user.id);
 
-  cb(response);
+  user.status = "Online";
+  await user.save();
+  cb();
 }
 
-function setSession(session, key, value) {
-  session[key] = value;
-  session.touch();
-  return new Promise((resolve, reject) => {
-    session.save(function(err) {
+async function signOut(io, socket, payload, cb) {
+  await User.findOneAndUpdate(
+    { _id: socket.request.session.userId },
+    { status: "Offline" }
+  );
+
+  await new Promise((resolve, reject) => {
+    socket.request.session.regenerate(function(err) {
       if (!err) {
         resolve();
       } else {
@@ -161,4 +173,21 @@ function setSession(session, key, value) {
       }
     });
   });
+  cb();
+}
+
+async function getLoggedInUser(io, socket, payload, cb) {
+  if (socket.request.session.userId && socket.request.session.isLoggedIn) {
+    const user = await User.findById(socket.request.session.userId).select(
+      "-password"
+    );
+    cb(user);
+  } else {
+    cb({
+      error: {
+        type: "authenticationError",
+        list: { authentication: ["Not signed in."] }
+      }
+    });
+  }
 }
