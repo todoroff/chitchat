@@ -165,7 +165,7 @@ async function signOut(io, socket, payload, cb) {
   );
 
   await new Promise((resolve, reject) => {
-    socket.request.session.regenerate(function(err) {
+    socket.request.session.destroy(function(err) {
       if (!err) {
         resolve();
       } else {
