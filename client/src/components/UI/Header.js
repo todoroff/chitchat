@@ -11,6 +11,11 @@ import {
 import PropTypes from "prop-types";
 
 function Header(props) {
+  async function handleSignOut() {
+    await props.signOut();
+    window.location.reload(); // get a new sessionId cookie
+  }
+
   const authContent = (
     <Fragment>
       <div className="header__section header__section--left">
@@ -33,7 +38,7 @@ function Header(props) {
             </Link>
           </div>
           <div className="header__control">
-            <button className="btn btn--icon" onClick={props.signOut}>
+            <button className="btn btn--icon" onClick={handleSignOut}>
               <FontAwesomeIcon icon={faSignOutAlt} transform="grow-3" />
             </button>
           </div>
