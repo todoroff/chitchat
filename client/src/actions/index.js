@@ -51,7 +51,7 @@ export const signIn = formData => async dispatch => {
   }
 };
 
-export const signOut = formData => async dispatch => {
+export const signOut = () => async dispatch => {
   dispatch({
     type: SIGNOUT_REQUEST
   });
