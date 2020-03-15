@@ -9,7 +9,8 @@ import {
   SIGNOUT_SUCCESS,
   GET_CLIENT_DETAILS_REQUEST,
   GET_CLIENT_DETAILS_SUCCESS,
-  GET_CLIENT_DETAILS_FAILURE
+  GET_CLIENT_DETAILS_FAILURE,
+  AUTH_FAILURE
 } from "../actions/types";
 
 const initialState = {
@@ -46,6 +47,7 @@ const clientReducer = (state = initialState, action) => {
     case SIGNUP_FAILURE:
     case SIGNIN_FAILURE:
     case GET_CLIENT_DETAILS_FAILURE:
+    case AUTH_FAILURE:
       return {
         ...state,
         details: null,
