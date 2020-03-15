@@ -46,26 +46,54 @@ if (process.env.NODE_ENV === "production") {
     res.sendFile(path.resolve(__dirname, "client", "build", "index.html"));
   });
 } else {
-  app.get("/", function(req, res) {
-    res.sendFile(__dirname + "/index.html");
+  app.use(express.static(path.resolve(__dirname, "client", "build")));
+
+  app.get("*", (req, res) => {
+    res.sendFile(path.resolve(__dirname, "index.html"));
   });
 }
 
-//import Socket.IO 'routes'
+// import Socket.IO 'routes'
 const authRoute = require("./routes/auth");
 const chatRoute = require("./routes/chat");
+
+// define authenticated route methods
+const authenticatedRoutes = {
+  auth: ["getLoggedInUser"],
+  chat: ["*"]
+};
 
 io.use(function(socket, next) {
   withSessions(socket.request, socket.request.res, next);
 });
 
 io.on("connection", function(socket) {
-  //pipe events to the proper 'route'
+  // auth middleware
+  socket.use((packet, next) => {
+    const [route, { method }, cb] = packet;
+    if (authenticatedRoutes[route].some(m => m === method || m === "*")) {
+      if (
+        !socket.request.session.userId ||
+        !socket.request.session.isLoggedIn
+      ) {
+        cb({
+          error: {
+            type: "authorizationError",
+            list: { authentication: ["Unauthorized."] }
+          }
+        });
+        return;
+      }
+    }
+    next();
+  });
+
+  // pipe events to the proper 'route'
   socket.on("auth", function(request, cb) {
     authRoute(io, socket, request, cb);
   });
-  socket.on("chat", function(request) {
-    chatRoute(request);
+  socket.on("chat", function(request, cb) {
+    chatRoute(io, socket, request, cb);
   });
 });
 

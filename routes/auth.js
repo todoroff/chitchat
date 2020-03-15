@@ -104,7 +104,7 @@ async function signUp(io, socket, payload, cb) {
 }
 
 async function signIn(io, socket, payload, cb) {
-if (socket.request.session.isLoggedIn) {
+  if (socket.request.session.isLoggedIn) {
     cb({
       error: {
         type: "authenticationError",
@@ -177,17 +177,8 @@ async function signOut(io, socket, payload, cb) {
 }
 
 async function getLoggedInUser(io, socket, payload, cb) {
-  if (socket.request.session.userId && socket.request.session.isLoggedIn) {
-    const user = await User.findById(socket.request.session.userId).select(
-      "-password"
-    );
-    cb(user);
-  } else {
-    cb({
-      error: {
-        type: "authenticationError",
-        list: { authentication: ["Not signed in."] }
-      }
-    });
-  }
+  const user = await User.findById(socket.request.session.userId).select(
+    "-password"
+  );
+  cb(user);
 }
