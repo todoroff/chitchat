@@ -1,353 +1,130 @@
 import React, { useState, useEffect, Fragment, useRef } from "react";
-import PropTypes from "prop-types";
+import { Link } from "react-router-dom";
+import Moment from "react-moment";
+import { connect } from "react-redux";
+import { getMessages } from "../../actions";
+//import PropTypes from "prop-types";
 import autosize from "autosize";
 import Header from "../UI/Header";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faHashtag, faPaperPlane } from "@fortawesome/free-solid-svg-icons";
 import Spinner from "../UI/Spinner";
 
-function ChatRoom(props) {
+function ChatRoom({
+  getMessages,
+  client,
+  rooms,
+  messages,
+  users,
+  location,
+  history
+}) {
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState("");
+  const room = location.pathname.split("/")[2];
+  const roomList = Object.keys(rooms).map(rm => rooms[rm]);
+  const userList = Object.keys(users).map(id => users[id]);
+  const onlineUsers = userList.filter(
+    user => user.status === "Online" || user.status === "Idle"
+  );
+  const offlineUsers = userList.filter(user => user.status === "Offline");
+
+  useEffect(() => {
+    (async () => {
+      setLoading(true);
+      if (!rooms[room]) {
+        return;
+      }
+      await getMessages(rooms[room]._id);
+
+      setLoading(false);
+    })();
+  }, [getMessages, room, rooms]);
+
   function handleChange(e) {
     const { value } = e.target;
     setMessage(value);
   }
   function handleKeyPress(e) {
     const { charCode, shiftKey } = e;
-    if (charCode == 13 && !shiftKey) {
+    if (charCode === 13 && !shiftKey) {
       e.preventDefault();
       handleSubmit(message);
     }
-    if (charCode == 13 && shiftKey) {
+    if (charCode === 13 && shiftKey) {
       setMessage(msg => msg + "\n");
     }
   }
 
-  function handleSubmit(msg) {
-    if (!msg.trim()) {
+  async function handleSubmit(msg) {
+    msg = msg.trim();
+    if (!msg) {
       return;
     }
-    console.log("submitted: " + msg.trim());
+    send("chat", "sendMessage", { text: msg, room: rooms[room]._id });
     setMessage("");
   }
-  useEffect(() => {
-    new Promise((res, rej) => setTimeout(() => res(), 1000)).then(() =>
-      setLoading(false)
-    );
-  }, [setLoading]);
 
   const inputArea = useRef(null);
+  const messageContainer = useRef(null);
+
+  useEffect(() => {
+    messageContainer.current.scrollTop = messageContainer.current.scrollHeight;
+  }, [messages]);
+
   useEffect(() => {
     autosize(inputArea.current);
-  }, [autosize, inputArea]);
-
+  }, [inputArea]);
   return (
     <Fragment>
-      <Header auth heading="General" />
+      <Header auth heading={room} />
       <div className="page">
         <div className="sidebar sidebar--left">
           <div className="list">
-            <div className="list__item">
-              <a href="#" className="list__link list__link--active">
-                <FontAwesomeIcon icon={faHashtag} /> General
-              </a>
-            </div>
-            <div className="list__item">
-              <a href="#" className="list__link">
-                <FontAwesomeIcon icon={faHashtag} /> Math
-              </a>
-            </div>
-            <div className="list__item">
-              <a href="#" className="list__link">
-                <FontAwesomeIcon icon={faHashtag} /> Fitness
-              </a>
-            </div>
+            {roomList.map(rm => (
+              <div className="list__item" key={rm._id}>
+                <Link
+                  to={rm.name}
+                  className={`list__link ${
+                    rm.name === room ? "list__link--active" : null
+                  }`}
+                >
+                  <FontAwesomeIcon icon={faHashtag} /> {rm.name}
+                </Link>
+              </div>
+            ))}
           </div>
         </div>
         <main className="main">
           <div className="chat">
-            <div className="chat__messages">
+            <div className="chat__messages" ref={messageContainer}>
               {(loading && <Spinner />) || (
                 <Fragment>
-                  <div className="message">
-                    <div className="message__avatar">
-                      <div className="avatar avatar--offline">
-                        <img
-                          src="./img/avatar2.png"
-                          alt=""
-                          className="avatar__image"
-                        />
+                  {messages[rooms[room]._id].map(msg => (
+                    <div className="message" key={msg._id}>
+                      <div className="message__avatar">
+                        <div
+                          className={`avatar avatar--${users[
+                            msg.sender
+                          ].status.toLowerCase()}`}
+                        >
+                          <img
+                            src={users[msg.sender].avatar}
+                            alt={users[msg.sender].name}
+                            className="avatar__image"
+                          />
+                        </div>
                       </div>
+                      <span className="message__sender">
+                        {users[msg.sender].name}
+                      </span>
+                      <span className="message__date">
+                        &nbsp;&nbsp;
+                        <Moment format="DD/MM/YY - HH:mm">{msg.date}</Moment>
+                      </span>
+                      <p className="message__content">{msg.text}</p>
                     </div>
-                    <span className="message__sender">Ruth</span>
-                    <span className="message__date">12/07/23 16:00</span>
-                    <p className="message__content">
-                      That sounds like a horrible mentor.
-                    </p>
-                  </div>
-                  <div className="message">
-                    <div className="message__avatar">
-                      <div className="avatar avatar--online">
-                        <img
-                          src="./img/avatar.png"
-                          alt=""
-                          className="avatar__image"
-                        />
-                      </div>
-                    </div>
-                    <span className="message__sender">Mihail</span>
-                    <span className="message__date">12/07/23 16:00</span>
-                    <p className="message__content">
-                      It's more integreated and unlike exericsm, it's not really
-                      about writing code the best way, so once you solve an
-                      exercise and look at the top answers you see so many crazy
-                      one-liners But because of that you do really get to see
-                      some other perspectives on how to solve something, which
-                      is great
-                    </p>
-                  </div>
-                  <div className="message">
-                    <div className="message__avatar">
-                      <div className="avatar avatar--offline">
-                        <img
-                          src="./img/avatar2.png"
-                          alt=""
-                          className="avatar__image"
-                        />
-                      </div>
-                    </div>
-                    <span className="message__sender">Ruth</span>
-                    <span className="message__date">12/07/23 16:00</span>
-                    <p className="message__content">
-                      i've been on the Ruby track for a while... decided to do
-                      some js exercise from exercism today and i couldn't get
-                      the test to pass... after like an hour of debugging, i
-                      looked up js syntax and discoverd i was doing
-                    </p>
-                  </div>
-                  <div className="message">
-                    <div className="message__avatar">
-                      <div className="avatar avatar--online">
-                        <img
-                          src="./img/avatar.png"
-                          alt=""
-                          className="avatar__image"
-                        />
-                      </div>
-                    </div>
-                    <span className="message__sender">Mihail</span>
-                    <span className="message__date">12/07/23 16:00</span>
-                    <p className="message__content">
-                      I wonder if it's because I've got an AMD graphics card and
-                      not nvidia. I really don't know.
-                    </p>
-                  </div>
-                  <div className="message">
-                    <div className="message__avatar">
-                      <div className="avatar avatar--offline">
-                        <img
-                          src="./img/avatar2.png"
-                          alt=""
-                          className="avatar__image"
-                        />
-                      </div>
-                    </div>
-                    <span className="message__sender">Ruth</span>
-                    <span className="message__date">12/07/23 16:00</span>
-                    <p className="message__content">
-                      Tried searching for why I would be getting this
-                      notification and do not see anything or if I have to do
-                      anything. [jland47/my_first_rails_app] Bump puma from
-                      3.12.2 to 3.12.3 (#2)
-                    </p>
-                  </div>
-                  <div className="message">
-                    <div className="message__avatar">
-                      <div className="avatar avatar--offline">
-                        <img
-                          src="./img/avatar2.png"
-                          alt=""
-                          className="avatar__image"
-                        />
-                      </div>
-                    </div>
-                    <span className="message__sender">Ruth</span>
-                    <span className="message__date">12/07/23 16:00</span>
-                    <p className="message__content">
-                      That sounds like a horrible mentor.
-                    </p>
-                  </div>
-                  <div className="message">
-                    <div className="message__avatar">
-                      <div className="avatar avatar--online">
-                        <img
-                          src="./img/avatar.png"
-                          alt=""
-                          className="avatar__image"
-                        />
-                      </div>
-                    </div>
-                    <span className="message__sender">Mihail</span>
-                    <span className="message__date">12/07/23 16:00</span>
-                    <p className="message__content">
-                      It's more integreated and unlike exericsm, it's not really
-                      about writing code the best way, so once you solve an
-                      exercise and look at the top answers you see so many crazy
-                      one-liners But because of that you do really get to see
-                      some other perspectives on how to solve something, which
-                      is great
-                    </p>
-                  </div>
-                  <div className="message">
-                    <div className="message__avatar">
-                      <div className="avatar avatar--offline">
-                        <img
-                          src="./img/avatar2.png"
-                          alt=""
-                          className="avatar__image"
-                        />
-                      </div>
-                    </div>
-                    <span className="message__sender">Ruth</span>
-                    <span className="message__date">12/07/23 16:00</span>
-                    <p className="message__content">
-                      i've been on the Ruby track for a while... decided to do
-                      some js exercise from exercism today and i couldn't get
-                      the test to pass... after like an hour of debugging, i
-                      looked up js syntax and discoverd i was doing
-                    </p>
-                  </div>
-                  <div className="message">
-                    <div className="message__avatar">
-                      <div className="avatar avatar--online">
-                        <img
-                          src="./img/avatar.png"
-                          alt=""
-                          className="avatar__image"
-                        />
-                      </div>
-                    </div>
-                    <span className="message__sender">Mihail</span>
-                    <span className="message__date">12/07/23 16:00</span>
-                    <p className="message__content">
-                      I wonder if it's because I've got an AMD graphics card and
-                      not nvidia. I really don't know.
-                    </p>
-                  </div>
-                  <div className="message">
-                    <div className="message__avatar">
-                      <div className="avatar avatar--offline">
-                        <img
-                          src="./img/avatar2.png"
-                          alt=""
-                          className="avatar__image"
-                        />
-                      </div>
-                    </div>
-                    <span className="message__sender">Ruth</span>
-                    <span className="message__date">12/07/23 16:00</span>
-                    <p className="message__content">
-                      Tried searching for why I would be getting this
-                      notification and do not see anything or if I have to do
-                      anything. [jland47/my_first_rails_app] Bump puma from
-                      3.12.2 to 3.12.3 (#2)
-                    </p>
-                  </div>
-                  <div className="message">
-                    <div className="message__avatar">
-                      <div className="avatar avatar--offline">
-                        <img
-                          src="./img/avatar2.png"
-                          alt=""
-                          className="avatar__image"
-                        />
-                      </div>
-                    </div>
-                    <span className="message__sender">Ruth</span>
-                    <span className="message__date">12/07/23 16:00</span>
-                    <p className="message__content">
-                      That sounds like a horrible mentor.
-                    </p>
-                  </div>
-                  <div className="message">
-                    <div className="message__avatar">
-                      <div className="avatar avatar--online">
-                        <img
-                          src="./img/avatar.png"
-                          alt=""
-                          className="avatar__image"
-                        />
-                      </div>
-                    </div>
-                    <span className="message__sender">Mihail</span>
-                    <span className="message__date">12/07/23 16:00</span>
-                    <p className="message__content">
-                      It's more integreated and unlike exericsm, it's not really
-                      about writing code the best way, so once you solve an
-                      exercise and look at the top answers you see so many crazy
-                      one-liners But because of that you do really get to see
-                      some other perspectives on how to solve something, which
-                      is great
-                    </p>
-                  </div>
-                  <div className="message">
-                    <div className="message__avatar">
-                      <div className="avatar avatar--offline">
-                        <img
-                          src="./img/avatar2.png"
-                          alt=""
-                          className="avatar__image"
-                        />
-                      </div>
-                    </div>
-                    <span className="message__sender">Ruth</span>
-                    <span className="message__date">12/07/23 16:00</span>
-                    <p className="message__content">
-                      i've been on the Ruby track for a while... decided to do
-                      some js exercise from exercism today and i couldn't get
-                      the test to pass... after like an hour of debugging, i
-                      looked up js syntax and discoverd i was doing
-                    </p>
-                  </div>
-                  <div className="message">
-                    <div className="message__avatar">
-                      <div className="avatar avatar--online">
-                        <img
-                          src="./img/avatar.png"
-                          alt=""
-                          className="avatar__image"
-                        />
-                      </div>
-                    </div>
-                    <span className="message__sender">Mihail</span>
-                    <span className="message__date">12/07/23 16:00</span>
-                    <p className="message__content">
-                      I wonder if it's because I've got an AMD graphics card and
-                      not nvidia. I really don't know.
-                    </p>
-                  </div>
-                  <div className="message">
-                    <div className="message__avatar">
-                      <div className="avatar avatar--offline">
-                        <img
-                          src="./img/avatar2.png"
-                          alt=""
-                          className="avatar__image"
-                        />
-                      </div>
-                    </div>
-                    <a href="#" className="message__sender">
-                      Ruth
-                    </a>
-                    <span className="message__date">12/07/23 16:00</span>
-                    <p className="message__content">
-                      Tried searching for why I would be getting this
-                      notification and do not see anything or if I have to do
-                      anything. [jland47/my_first_rails_app] Bump puma from
-                      3.12.2 to 3.12.3 (#2)
-                    </p>
-                  </div>{" "}
+                  ))}
                 </Fragment>
               )}
             </div>
@@ -355,7 +132,7 @@ function ChatRoom(props) {
               <textarea
                 ref={inputArea}
                 className="chat__text-input"
-                disabled={loading}
+                disabled={loading || !rooms[room]}
                 rows="1"
                 value={message}
                 onChange={handleChange}
@@ -363,6 +140,7 @@ function ChatRoom(props) {
               ></textarea>
               <div className="chat__send-button">
                 <button
+                  disabled={loading || !rooms[room]}
                   className="btn btn--icon"
                   onClick={() => handleSubmit(message)}
                 >
@@ -374,21 +152,50 @@ function ChatRoom(props) {
         </main>
         <div className="sidebar sidebar--right">
           <div className="sidebar__heading sidebar__heading--small">
-            Online — 1
+            Online — {onlineUsers.length}
           </div>
           <div className="list">
-            <div className="list__item">
-              <a href="#" className="list__link">
-                <div className="avatar avatar--online">
-                  <img
-                    src="./img/avatar.png"
-                    alt=""
-                    className="avatar__image"
-                  />{" "}
-                </div>
-                <span className="list__username">Mihail</span>
-              </a>
-            </div>
+            {onlineUsers.map(usr => (
+              <div className="list__item" key={usr._id}>
+                <Link to="" className="list__link">
+                  <div
+                    className={`avatar avatar--${users[
+                      usr._id
+                    ].status.toLowerCase()}`}
+                  >
+                    <img
+                      src={users[usr._id].avatar}
+                      alt=""
+                      className="avatar__image"
+                    />{" "}
+                  </div>
+                  <span className="list__username">{users[usr._id].name}</span>
+                </Link>
+              </div>
+            ))}
+          </div>
+          <div className="sidebar__heading sidebar__heading--small">
+            Offline — {offlineUsers.length}
+          </div>
+          <div className="list">
+            {offlineUsers.map(usr => (
+              <div className="list__item" key={usr._id}>
+                <Link to="" className="list__link">
+                  <div
+                    className={`avatar avatar--${users[
+                      usr._id
+                    ].status.toLowerCase()}`}
+                  >
+                    <img
+                      src={users[usr._id].avatar}
+                      alt=""
+                      className="avatar__image"
+                    />{" "}
+                  </div>
+                  <span className="list__username">{users[usr._id].name}</span>
+                </Link>
+              </div>
+            ))}
           </div>
         </div>
       </div>
@@ -396,6 +203,13 @@ function ChatRoom(props) {
   );
 }
 
-ChatRoom.propTypes = {};
+//ChatRoom.propTypes = {};
 
-export default ChatRoom;
+const mapStateToProps = state => ({
+  rooms: state.rooms,
+  messages: state.messages,
+  client: state.client.details,
+  users: state.users
+});
+
+export default connect(mapStateToProps, { getMessages })(ChatRoom);

@@ -10,12 +10,13 @@ import {
   GET_CLIENT_DETAILS_REQUEST,
   GET_CLIENT_DETAILS_SUCCESS,
   GET_CLIENT_DETAILS_FAILURE,
-  AUTH_FAILURE
+  AUTH_FAILURE,
 } from "../actions/types";
 
 const initialState = {
   details: null,
   isLoggedIn: false,
+  currentRoom: null,
   error: null
 };
 
