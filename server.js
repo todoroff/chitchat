@@ -68,10 +68,16 @@ io.use(function(socket, next) {
   withSessions(socket.request, socket.request.res, next);
 });
 
-io.on("connection", function(socket) {
+io.on("connection", async function(socket) {
   if (socket.request.session.userId && socket.request.session.isLoggedIn) {
     socket.join("chitchat");
     socket.join(socket.request.session.userId);
+      const user = await User.findOneAndUpdate(
+        { _id: socket.request.session.userId },
+        { status: "Online" },
+        { new: true }
+      );
+      io.to("chitchat").emit("updatedUser", user);
   }
   // auth middleware
   socket.use((packet, next) => {
@@ -102,6 +108,16 @@ io.on("connection", function(socket) {
   });
   socket.on("user", function(request, cb) {
     userRoute(io, socket, request, cb);
+  });
+  socket.on("disconnect", async () => {
+    if (socket.request.session.isLoggedIn && socket.request.session.userId) {
+      const user = await User.findOneAndUpdate(
+        { _id: socket.request.session.userId },
+        { status: "Offline" },
+        { new: true }
+      );
+      io.to("chitchat").emit("updatedUser", user);
+    }
   });
 });
 

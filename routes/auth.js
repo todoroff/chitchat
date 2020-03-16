@@ -168,10 +168,11 @@ async function signOut(io, socket, payload, cb) {
     { status: "Offline" },
     { new: true }
   );
-
+  io.to("chitchat").emit("updatedUser", user);
   await new Promise((resolve, reject) => {
     socket.request.session.destroy(function(err) {
       if (!err) {
+        //socket.request.session.save();
         resolve();
       } else {
         reject(err);
@@ -179,7 +180,6 @@ async function signOut(io, socket, payload, cb) {
     });
   });
 
-  io.to("chitchat").emit("updatedUser", user);
   cb();
 }
 
