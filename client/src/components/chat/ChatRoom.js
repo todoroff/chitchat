@@ -71,7 +71,7 @@ function ChatRoom({
 
   useEffect(() => {
     messageContainer.current.scrollTop = messageContainer.current.scrollHeight;
-  }, [location.pathname, messages]);
+  });
 
   useEffect(() => {
     autosize(inputArea.current);
