@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import Moment from "react-moment";
 import { connect } from "react-redux";
 import { getMessages } from "../../actions";
+import { send } from "../../utils/socket";
 //import PropTypes from "prop-types";
 import autosize from "autosize";
 import Header from "../UI/Header";

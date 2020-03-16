@@ -155,13 +155,18 @@ async function signIn(io, socket, payload, cb) {
 
   user.status = "Online";
   await user.save();
+  socket.join("chitchat");
+  socket.join(user.id);
+
+  io.to("chitchat").emit("updatedUser", user);
   cb();
 }
 
 async function signOut(io, socket, payload, cb) {
-  await User.findOneAndUpdate(
+  const user = await User.findOneAndUpdate(
     { _id: socket.request.session.userId },
-    { status: "Offline" }
+    { status: "Offline" },
+    { new: true }
   );
 
   await new Promise((resolve, reject) => {
@@ -173,6 +178,8 @@ async function signOut(io, socket, payload, cb) {
       }
     });
   });
+
+  io.to("chitchat").emit("updatedUser", user);
   cb();
 }
 

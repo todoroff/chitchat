@@ -6,6 +6,7 @@ const mongoose = require("mongoose");
 const connectDB = require("./utils/db");
 const MongoStore = require("connect-mongo")(session);
 const path = require("path");
+const User = require("./models/User");
 
 connectDB();
 
@@ -46,21 +47,21 @@ if (process.env.NODE_ENV === "production") {
     res.sendFile(path.resolve(__dirname, "client", "build", "index.html"));
   });
 } else {
-  app.use(express.static(path.resolve(__dirname, "client", "build")));
-
   app.get("*", (req, res) => {
-    res.sendFile(path.resolve(__dirname, "index.html"));
+    res.send("Working");
   });
 }
 
 // import Socket.IO 'routes'
 const authRoute = require("./routes/auth");
 const chatRoute = require("./routes/chat");
+const userRoute = require("./routes/user");
 
 // define authenticated route methods
 const authenticatedRoutes = {
   auth: ["getLoggedInUser"],
-  chat: ["*"]
+  chat: ["*"],
+  user: ["*"]
 };
 
 io.use(function(socket, next) {
@@ -68,18 +69,22 @@ io.use(function(socket, next) {
 });
 
 io.on("connection", function(socket) {
+  if (socket.request.session.userId && socket.request.session.isLoggedIn) {
+    socket.join("chitchat");
+    socket.join(socket.request.session.userId);
+  }
   // auth middleware
   socket.use((packet, next) => {
     const [route, { method }, cb] = packet;
     if (authenticatedRoutes[route].some(m => m === method || m === "*")) {
       if (
-        !socket.request.session.userId ||
-        !socket.request.session.isLoggedIn
+        socket.request.session &&
+        (!socket.request.session.userId || !socket.request.session.isLoggedIn)
       ) {
         cb({
           error: {
             type: "authorizationError",
-            list: { authentication: ["Unauthorized."] }
+            list: { authorization: ["Unauthorized."] }
           }
         });
         return;
@@ -94,6 +99,9 @@ io.on("connection", function(socket) {
   });
   socket.on("chat", function(request, cb) {
     chatRoute(io, socket, request, cb);
+  });
+  socket.on("user", function(request, cb) {
+    userRoute(io, socket, request, cb);
   });
 });
 
