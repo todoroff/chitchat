@@ -155,6 +155,5 @@ export const receivedMessage = msg => async dispatch => {
 };
 
 export const updatedUser = usr => async dispatch => {
-  console.log(usr);
   dispatch({ type: UPDATED_USER, payload: usr });
 };
