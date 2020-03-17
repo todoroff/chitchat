@@ -2,6 +2,12 @@
 
 A messaging app...
 
+Demo: https://chithat.todoroff.dev
+Email: test@test.net
+Password: 123456
+
+![chit chat screenshot](https://i.imgur.com/8Fv9ISx.gif)
+
 Backend:
 - Socket.IO
 - Express
