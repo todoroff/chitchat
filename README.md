@@ -2,7 +2,7 @@
 
 A messaging app...
 
-Demo: https://chithat.todoroff.dev
+Demo: https://chitchat.todoroff.dev
 Email: test@test.net
 Password: 123456
 
